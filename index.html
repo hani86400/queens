@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0" >
+<title>Queen Game</title>
+
+<style>
+
+*{box-sizing:border-box;margin:0;padding:0}
+
+body{
+min-height:100vh;
+background:linear-gradient(135deg,#f3f4f6,#e5e7eb);
+display:flex;
+flex-direction:column;
+align-items:center;
+padding:40px 16px 60px;
+font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+color:#111;
+user-select:none
+}
+
+h1{
+font-size:2rem;
+font-weight:800;
+margin-bottom:8px
+}
+
+.sub{
+color:#4b5563;
+font-size:.9rem;
+max-width:420px;
+text-align:center;
+margin-bottom:24px
+}
+
+.settings{
+display:flex;
+flex-wrap:wrap;
+gap:14px;
+align-items:flex-end;
+justify-content:center;
+margin-bottom:24px
+}
+
+.field label{
+display:block;
+font-size:.7rem;
+color:#374151;
+margin-bottom:6px;
+font-weight:600
+}
+
+select{
+background:#fff;
+border:1px solid #d1d5db;
+padding:8px 12px;
+border-radius:6px;
+font-size:.9rem;
+cursor:pointer
+}
+
+.gen{
+background:#2563eb;
+color:#fff;
+border:none;
+padding:9px 24px;
+border-radius:7px;
+font-weight:700;
+cursor:pointer
+}
+
+.gen:hover{background:#1d4ed8}
+
+#status{
+display:none;
+flex-direction:column;
+align-items:center;
+gap:10px;
+margin-bottom:20px
+}
+
+.tries-row{display:flex;align-items:center;gap:8px}
+
+.heart{font-size:1rem}
+.heart.lost{opacity:.25}
+
+#board{
+display:inline-grid;
+border-radius:10px;
+overflow:hidden;
+border:2px solid #d1d5db
+}
+
+.cell{
+display:flex;
+align-items:center;
+justify-content:center;
+cursor:pointer;
+border:1px solid rgba(0,0,0,.08);
+font-size:1.4rem
+}
+
+.cell:hover{filter:brightness(1.1)}
+
+.icon{
+font-size:4.4rem;
+font-weight:900
+}
+
+.flag{
+font-size:1.4rem
+}
+
+.xmark{
+font-size:1.3rem;
+color:#6b7280
+}
+
+#result{
+margin-top:6px;
+font-weight:700
+}
+
+</style>
+</head>
+
+<body>
+
+<h1>♛ Queen Game</h1>
+<h4>v 0.0.1</h4>
+
+<p class="sub">
+Single click = mark ⚑ <br>
+Double click = guess ♛
+</p>
+
+<div class="settings">
+
+<div class="field">
+<label>Grid Size</label>
+<select id="sz">
+<option value="6">6 × 6</option>
+<option value="7">7 × 7</option>
+<option value="8">8 × 8</option>
+<option value="9">9 × 9</option>
+</select>
+</div>
+
+<div class="field">
+<label>Tries</label>
+<select id="tr">
+<option value="10">10</option>
+<option value="5">5</option>
+<option value="1">1</option>
+</select>
+</div>
+
+<div class="field">
+<label>Auto X</label>
+<select id="autoX">
+<option value="yes" selected>YES</option>
+<option value="no">NO</option>
+</select>
+</div>
+
+<button class="gen" onclick="newGame()">Generate</button>
+
+</div>
+
+<div id="status">
+
+<div class="tries-row">
+<span>Tries</span>
+<div id="hearts"></div>
+</div>
+
+<div>
+<span id="fc"></span> queens found
+</div>
+
+<div id="result"></div>
+
+</div>
+
+<div id="board"></div>
+
+<p id="hint">Generate a board to start.</p>
+
+<script>
+
+const board=document.getElementById("board")
+const status=document.getElementById("status")
+const hint=document.getElementById("hint")
+const result=document.getElementById("result")
+const hearts=document.getElementById("hearts")
+const fc=document.getElementById("fc")
+const sz=document.getElementById("sz")
+const tr=document.getElementById("tr")
+const autoX=document.getElementById("autoX")
+
+var COLORSORIG=["#fde2e2","#ffe5d4","#fff1c2","#dcfce7","#dbeafe","#ede9fe","#fce7f3","#fef3c7","#e5e7eb"]
+var COLORS=["#FFB33F","#FF4400","#C00707","#AEB784","#F6F09F","#FF7070","#fce7f3","#fef3c7","#e5e7eb"]
+
+
+var G=null
+
+function shuffle(a){
+for(let i=a.length-1;i>0;i--){
+let j=Math.floor(Math.random()*(i+1))
+let t=a[i];a[i]=a[j];a[j]=t
+}
+return a
+}
+
+function safeQueen(row,col,queens){
+
+for(let q of queens){
+
+if(q.col===col) return false
+
+if(Math.abs(q.row-row)<=1 && Math.abs(q.col-col)<=1)
+return false
+
+}
+
+return true
+}
+
+function placeQueens(n){
+
+let queens=[]
+
+function backtrack(row){
+
+if(row===n) return true
+
+let cols=shuffle([...Array(n).keys()])
+
+for(let col of cols){
+
+if(safeQueen(row,col,queens)){
+
+queens.push({row,col})
+
+if(backtrack(row+1)) return true
+
+queens.pop()
+
+}
+
+}
+
+return false
+}
+
+backtrack(0)
+
+return queens
+
+}
+
+function buildRegions(n,queens){
+
+let grid=[...Array(n)].map(()=>Array(n).fill(-1))
+
+queens.forEach((q,k)=>grid[q.row][q.col]=k)
+
+let queues=queens.map(q=>[{r:q.row,c:q.col}])
+let dirs=[[1,0],[-1,0],[0,1],[0,-1]]
+
+let active=true
+
+while(active){
+
+active=false
+
+for(let i=0;i<n;i++){
+
+let next=[]
+
+queues[i].forEach(p=>{
+dirs.forEach(d=>{
+
+let nr=p.r+d[0]
+let nc=p.c+d[1]
+
+if(nr>=0&&nr<n&&nc>=0&&nc<n&&grid[nr][nc]===-1){
+
+grid[nr][nc]=i
+next.push({r:nr,c:nc})
+
+}
+
+})
+})
+
+queues[i]=next
+
+if(next.length) active=true
+
+}
+
+}
+
+return grid
+}
+
+function cellPx(n){
+
+if(n<=6)return 64
+if(n<=7)return 56
+if(n<=8)return 48
+return 44
+
+}
+
+function newGame(){
+
+let n=parseInt(sz.value)
+let mt=parseInt(tr.value)
+
+let queens=placeQueens(n)
+
+G={
+n,
+queens,
+regions:buildRegions(n,queens),
+colors:COLORS.slice(0,n),
+maxTries:mt,
+triesLeft:mt,
+revealed:{},
+marked:{},
+xmarks:{},
+over:false,
+cells:{}
+}
+
+hint.style.display="none"
+status.style.display="flex"
+result.textContent=""
+
+renderBoard()
+renderStatus()
+
+}
+
+function renderBoard(){
+
+let n=G.n
+let px=cellPx(n)
+
+board.style.gridTemplateColumns=`repeat(${n},${px}px)`
+board.style.gridTemplateRows=`repeat(${n},${px}px)`
+
+board.innerHTML=""
+G.cells={}
+
+for(let r=0;r<n;r++)
+for(let c=0;c<n;c++){
+
+let div=document.createElement("div")
+
+div.className="cell"
+div.style.background=G.colors[G.regions[r][c]]
+div.style.width=px+"px"
+div.style.height=px+"px"
+
+let clicks=0
+let timer=null
+
+div.onclick=function(){
+
+clicks++
+
+if(timer)clearTimeout(timer)
+
+timer=setTimeout(()=>{
+
+if(clicks===1)markCell(r,c)
+else guessCell(r,c)
+
+clicks=0
+timer=null
+
+},220)
+
+}
+
+board.appendChild(div)
+
+G.cells[r+","+c]=div
+
+}
+
+}
+
+function addIcon(r,c,icon,cls){
+
+let div=G.cells[r+","+c]
+div.innerHTML=""
+
+let s=document.createElement("span")
+s.textContent=icon
+s.className=cls
+
+div.appendChild(s)
+
+}
+
+function markCell(r,c){
+
+if(G.over) return
+
+let k=r+","+c
+let div=G.cells[k]
+
+if(G.marked[k]){
+
+delete G.marked[k]
+div.innerHTML=""
+
+}else{
+
+G.marked[k]=1
+addIcon(r,c,"⚑","flag")
+
+}
+
+}
+
+function isQueen(r,c){
+
+return G.queens.some(q=>q.row===r&&q.col===c)
+
+}
+
+function markX(r,c){
+
+let k=r+","+c
+
+if(G.revealed[k]) return
+if(G.xmarks[k]) return
+
+G.xmarks[k]=1
+addIcon(r,c,"✕","xmark")
+
+}
+
+function autoMark(r,c){
+
+let n=G.n
+
+for(let i=0;i<n;i++){
+
+markX(r,i)
+markX(i,c)
+
+}
+
+for(let dr=-1;dr<=1;dr++)
+for(let dc=-1;dc<=1;dc++){
+
+let nr=r+dr
+let nc=c+dc
+
+if(nr>=0&&nr<n&&nc>=0&&nc<n)
+markX(nr,nc)
+
+}
+
+}
+
+function guessCell(r,c){
+
+if(G.over) return
+
+let k=r+","+c
+
+if(G.revealed[k]) return
+
+if(isQueen(r,c)){
+
+G.revealed[k]=1
+
+addIcon(r,c,"♛","icon")
+
+if(autoX.value==="yes")
+autoMark(r,c)
+
+let found=Object.keys(G.revealed).length
+
+if(found===G.queens.length)
+endGame(true)
+
+}else{
+
+G.triesLeft--
+
+addIcon(r,c,"✕","xmark")
+
+if(G.triesLeft<=0)
+endGame(false)
+
+}
+
+renderStatus()
+
+}
+
+function endGame(win){
+
+G.over=true
+
+if(!win){
+
+G.queens.forEach(q=>{
+addIcon(q.row,q.col,"♛","icon")
+})
+
+}
+
+result.textContent=win?"You Win":"Game Over"
+
+}
+
+function renderStatus(){
+
+hearts.innerHTML=""
+
+for(let i=0;i<G.maxTries;i++){
+
+let s=document.createElement("span")
+
+s.className="heart"+(i<G.triesLeft?"":" lost")
+s.textContent="❤"
+
+hearts.appendChild(s)
+
+}
+
+fc.textContent=Object.keys(G.revealed).length+" / "+G.queens.length
+
+}
+
+</script>
+
+</body>
+</html>
