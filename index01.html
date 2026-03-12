@@ -2,14 +2,10 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0" >
 <title>Queen Game</title>
 
 <style>
-
-:root{
---bg-gap:#f3f4f6;
-}
 
 *{box-sizing:border-box;margin:0;padding:0}
 
@@ -92,10 +88,9 @@ margin-bottom:20px
 
 #board{
 display:inline-grid;
-border-radius:12px;
+border-radius:10px;
 overflow:hidden;
-border:10px solid var(--bg-gap);
-background:var(--bg-gap);
+border:2px solid #d1d5db
 }
 
 .cell{
@@ -103,7 +98,7 @@ display:flex;
 align-items:center;
 justify-content:center;
 cursor:pointer;
-border:6px solid var(--bg-gap);
+border:1px solid rgba(0,0,0,.08);
 font-size:1.4rem
 }
 
@@ -134,7 +129,7 @@ font-weight:700
 <body>
 
 <h1>♛ Queen Game</h1>
-<h4>v 0.0.2</h4>
+<h4>v 0.0.1</h4>
 
 <p class="sub">
 Single click = mark ⚑ <br>
@@ -207,6 +202,7 @@ const autoX=document.getElementById("autoX")
 
 var COLORS=["#6384B3","#E8A9C1","#69BCE0","#DFB547","#C16684","#4DB2A6","#A4AEDB","#8F7ED1","#A6D892"]
 
+
 var G=null
 
 function shuffle(a){
@@ -261,6 +257,7 @@ return false
 backtrack(0)
 
 return queens
+
 }
 
 function buildRegions(n,queens){
@@ -315,6 +312,7 @@ if(n<=6)return 64
 if(n<=7)return 56
 if(n<=8)return 48
 return 44
+
 }
 
 function newGame(){
@@ -344,6 +342,7 @@ result.textContent=""
 
 renderBoard()
 renderStatus()
+
 }
 
 function renderBoard(){
@@ -391,7 +390,9 @@ timer=null
 board.appendChild(div)
 
 G.cells[r+","+c]=div
+
 }
+
 }
 
 function addIcon(r,c,icon,cls){
@@ -404,6 +405,7 @@ s.textContent=icon
 s.className=cls
 
 div.appendChild(s)
+
 }
 
 function markCell(r,c){
@@ -422,11 +424,15 @@ div.innerHTML=""
 
 G.marked[k]=1
 addIcon(r,c,"⚑","flag")
+
 }
+
 }
 
 function isQueen(r,c){
+
 return G.queens.some(q=>q.row===r&&q.col===c)
+
 }
 
 function markX(r,c){
@@ -438,6 +444,7 @@ if(G.xmarks[k]) return
 
 G.xmarks[k]=1
 addIcon(r,c,"✕","xmark")
+
 }
 
 function autoMark(r,c){
@@ -459,7 +466,9 @@ let nc=c+dc
 
 if(nr>=0&&nr<n&&nc>=0&&nc<n)
 markX(nr,nc)
+
 }
+
 }
 
 function guessCell(r,c){
@@ -492,9 +501,11 @@ addIcon(r,c,"✕","xmark")
 
 if(G.triesLeft<=0)
 endGame(false)
+
 }
 
 renderStatus()
+
 }
 
 function endGame(win){
@@ -506,9 +517,11 @@ if(!win){
 G.queens.forEach(q=>{
 addIcon(q.row,q.col,"♛","icon")
 })
+
 }
 
 result.textContent=win?"You Win":"Game Over"
+
 }
 
 function renderStatus(){
@@ -523,9 +536,11 @@ s.className="heart"+(i<G.triesLeft?"":" lost")
 s.textContent="❤"
 
 hearts.appendChild(s)
+
 }
 
 fc.textContent=Object.keys(G.revealed).length+" / "+G.queens.length
+
 }
 
 </script>
